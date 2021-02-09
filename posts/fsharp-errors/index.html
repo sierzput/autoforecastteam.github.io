@@ -3,55 +3,55 @@
 </span>&nbsp;&nbsp;&nbsp;&nbsp;<i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time class=timeago datetime=2021-02-09>2021-02-09</time>&nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;626 words
 &nbsp;&nbsp;&nbsp;&nbsp;<i class="far fa-clock fa-fw"></i>&nbsp;3 minutes</div></div></div></div></div><article class="single toc-start"><div class="content-block content-block-first content-block-position"><div class=post><div class="details toc" id=toc-static data-kept><div class="details-summary toc-title"><span>Contents</span>
 <span><i class="details-icon fas fa-angle-right"></i></span></div><div class="details-content toc-content" id=toc-content-static><nav id=TableOfContents><ul><li><a href=#try-catch>Try-catch</a></li><li><a href=#problem-with-hofs-and-partial-application>Problem with HOFs and partial application</a></li><li><a href=#alternative-approach>Alternative approach</a></li><li><a href=#disclaimer>Disclaimer</a></li></ul></nav></div></div><h1 id=exception-handling-in-f>Exception Handling in F#</h1><h2 id=try-catch>Try-catch</h2><p>Simplest way to handle Exception is to use a try-with pattern. It is similar concept to a <a href=https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/try-catch target=_blank rel="noopener noreffer">try-catch pattern in C#</a>.
-According to an <a href=https://docs.microsoft.com/pl-pl/dotnet/fsharp/language-reference/exception-handling/the-try-with-expression target=_blank rel="noopener noreffer">F# documentation</a> a structure of try-catch blok is</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>try</span>
+According to an <a href=https://docs.microsoft.com/pl-pl/dotnet/fsharp/language-reference/exception-handling/the-try-with-expression target=_blank rel="noopener noreffer">F# documentation</a> a structure of try-catch block is</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>try</span>
     <span class=n>expression1</span>
 <span class=k>with</span>
 <span class=o>|</span> <span class=n>pattern1</span> <span class=o>-&gt;</span> <span class=n>expression2</span>
 <span class=o>|</span> <span class=n>pattern2</span> <span class=o>-&gt;</span> <span class=n>expression3</span>
 <span class=o>...</span>
-</code></pre></div><p>The shortest way we can write it, is to give one catch-all pattern for all exception.
-Then we can even drop the pipe, and match directly after <code>with</code> clause:</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>operationThatFails</span> <span class=bp>()</span> <span class=o>=</span> <span class=n>failwith</span> <span class=s>&#34;Error&#34;</span>
+</code></pre></div><p>The shortest way we can write it is to give one catch-all pattern for all exception.
+Then we can even drop the pipe and match directly after <code>with</code> clause:</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>operationThatFails</span> <span class=bp>()</span> <span class=o>=</span> <span class=n>failwith</span> <span class=s>&#34;Error&#34;</span>
 <span class=k>let</span> <span class=nv>x</span> <span class=o>=</span>
   <span class=k>try</span>
     <span class=n>operationThatFails</span> <span class=bp>()</span>
-  <span class=k>with</span> <span class=n>e</span> <span class=o>-&gt;</span> <span class=n>sprintf</span> <span class=s>&#34;Catched exception %A&#34;</span> <span class=n>e</span>
-</code></pre></div><p>In above case the exception is handled correctly. Variable x evaluates to <code>"Catched exception System.Exception: Error"</code> string.</p><h2 id=problem-with-hofs-and-partial-application>Problem with HOFs and partial application</h2><p>There is one problem, that have caught me unexpectedly.</p><p>I was working on a function that did a lookup on CsvRow from <a href=http://fsprojects.github.io/FSharp.Data/ target=_blank rel="noopener noreffer">FSharp.Data</a> package.
+  <span class=k>with</span> <span class=n>e</span> <span class=o>-&gt;</span> <span class=n>sprintf</span> <span class=s>&#34;Caught exception %A&#34;</span> <span class=n>e</span>
+</code></pre></div><p>In above case the exception is handled correctly. Variable x evaluates to <code>"Caught exception System.Exception: Error"</code> string.</p><h2 id=problem-with-hofs-and-partial-application>Problem with HOFs and partial application</h2><p>There is one problem that has caught me unexpectedly.</p><p>I was working on a function that did a lookup on CsvRow from <a href=http://fsprojects.github.io/FSharp.Data/ target=_blank rel="noopener noreffer">FSharp.Data</a> package.
 The first version was:</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>tryGetValue</span> <span class=o>(</span><span class=n>row</span><span class=o>:</span> <span class=n>CsvRow</span><span class=o>)</span> <span class=o>(</span><span class=n>columnName</span><span class=o>:</span> <span class=kt>string</span><span class=o>)</span> <span class=o>=</span>
    <span class=k>try</span>
        <span class=n>row</span><span class=o>.[</span><span class=n>columnName</span><span class=o>]</span>
    <span class=k>with</span>
    <span class=o>|</span> <span class=o>:?</span> <span class=n>KeyNotFoundException</span> <span class=o>-&gt;</span> <span class=n>failwithf</span> <span class=s>&#34;Missing column: %s&#34;</span> <span class=n>columnName</span>
-</code></pre></div><p>I used it to catch exceptions when there is a missing column name in CSV, and then rethrow
-with better message. Default exception message was too cryptic for my use case.</p><p>After couple of minutes, I thought that it would be a good idea to refactor this into a
+</code></pre></div><p>I used it to catch exceptions when there is a missing column name in CSV and then rethrow
+with better message. Default exception message was too cryptic for my use case.</p><p>After couple of minutes I thought that it would be a good idea to refactor this into a
 higher-order function that will be partially applied.</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>tryGetValue</span> <span class=o>(</span><span class=n>columnName</span><span class=o>:</span> <span class=kt>string</span><span class=o>)</span> <span class=o>=</span>
    <span class=k>try</span>
        <span class=k>fun</span> <span class=o>(</span><span class=n>x</span><span class=o>:</span> <span class=n>CsvRow</span><span class=o>)</span> <span class=o>-&gt;</span> <span class=n>x</span><span class=o>.[</span><span class=n>columnName</span><span class=o>]</span>
    <span class=k>with</span>
    <span class=o>|</span> <span class=o>:?</span> <span class=n>KeyNotFoundException</span> <span class=o>-&gt;</span> <span class=n>failwithf</span> <span class=s>&#34;Missing column: %s&#34;</span> <span class=n>columnName</span>
-</code></pre></div><p>At first glance it looked OK. The only problem is, that this solution did not work.</p><p>In this case, exceptions are catched only for the anonymous function creation part.
+</code></pre></div><p>At first glance it looked OK. The only problem is, that this solution did not work.</p><p>In this case exceptions are caught only for the anonymous function creation part.
 Application of my newly created function happens in another context, which may or may not have
-it&rsquo;s own exception handling.</p><p>Similar thing happens with partial application:</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>operationThatFails</span> <span class=o>(_:</span> <span class=kt>string</span><span class=o>)</span> <span class=o>(_:</span> <span class=kt>string</span><span class=o>)</span> <span class=o>:</span> <span class=kt>string</span> <span class=o>=</span> <span class=n>failwith</span> <span class=s>&#34;Error&#34;</span>
+its own exception handling.</p><p>Similar thing happens with partial application:</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>operationThatFails</span> <span class=o>(_:</span> <span class=kt>string</span><span class=o>)</span> <span class=o>(_:</span> <span class=kt>string</span><span class=o>)</span> <span class=o>:</span> <span class=kt>string</span> <span class=o>=</span> <span class=n>failwith</span> <span class=s>&#34;Error&#34;</span>
 
 <span class=k>let</span> <span class=nv>x</span> <span class=o>=</span>
   <span class=k>try</span>
     <span class=n>operationThatFails</span> <span class=s>&#34;str1&#34;</span> <span class=s>&#34;str2&#34;</span>
-  <span class=k>with</span> 
-  <span class=o>|</span> <span class=n>e</span> <span class=o>-&gt;</span> <span class=n>failwithf</span> <span class=s>&#34;Catched exception %A&#34;</span> <span class=n>e</span>
+  <span class=k>with</span>
+  <span class=o>|</span> <span class=n>e</span> <span class=o>-&gt;</span> <span class=n>failwithf</span> <span class=s>&#34;Caught exception %A&#34;</span> <span class=n>e</span>
 
 <span class=k>let</span> <span class=nv>partiallyApplied</span> <span class=o>:</span> <span class=o>(</span><span class=kt>string</span> <span class=o>-&gt;</span> <span class=kt>string</span><span class=o>)</span> <span class=o>=</span>
   <span class=k>try</span>
-    <span class=n>operationThatFails</span> <span class=s>&#34;str1&#34;</span> 
-  <span class=k>with</span> 
-  <span class=o>|</span> <span class=n>e</span> <span class=o>-&gt;</span> <span class=n>failwithf</span> <span class=s>&#34;Catched exception %A&#34;</span> <span class=n>e</span>
+    <span class=n>operationThatFails</span> <span class=s>&#34;str1&#34;</span>
+  <span class=k>with</span>
+  <span class=o>|</span> <span class=n>e</span> <span class=o>-&gt;</span> <span class=n>failwithf</span> <span class=s>&#34;Caught exception %A&#34;</span> <span class=n>e</span>
 
 <span class=k>let</span> <span class=nv>y</span> <span class=o>=</span> <span class=n>partiallyApplied</span> <span class=s>&#34;str2&#34;</span>
-</code></pre></div><p>Variable x evaluates to string <code>"Catched exception [...]"</code>.</p><p>Evaluation of y fails with <code>System.Exception: Error</code></p><h2 id=alternative-approach>Alternative approach</h2><p>An interesting (and more functional) way to handle exceptions is to use an
+</code></pre></div><p>Variable x evaluates to string <code>"Caught exception [...]"</code>.</p><p>Evaluation of y fails with <code>System.Exception: Error</code></p><h2 id=alternative-approach>Alternative approach</h2><p>An interesting (and more functional) way to handle exceptions is to use an
 <a href=https://github.com/fsprojects/FSharpPlus target=_blank rel="noopener noreffer">FSharpPlus</a> library.
 There is a simple (but very helpful) function <code>protect</code> for <code>Result</code> type:</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>protect</span> <span class=o>(</span><span class=n>f</span><span class=o>:</span> <span class=k>&#39;</span><span class=n>T</span><span class=o>-&gt;</span><span class=k>&#39;</span><span class=n>U</span><span class=o>)</span> <span class=o>(</span><span class=n>x</span><span class=o>:</span> <span class=k>&#39;</span><span class=n>T</span><span class=o>)</span> <span class=o>:</span> <span class=n>Result</span><span class=o>&lt;</span><span class=k>&#39;</span><span class=n>U</span><span class=o>,</span><span class=kt>exn</span><span class=o>&gt;</span> <span class=o>=</span>
         <span class=k>try</span>
             <span class=n>Ok</span> <span class=o>(</span><span class=n>f</span> <span class=n>x</span><span class=o>)</span>
         <span class=k>with</span> <span class=n>e</span> <span class=o>-&gt;</span> <span class=n>Error</span> <span class=n>e</span>
-</code></pre></div><p>Each time we deal with a function/method that throws exceptions, we can wrap it
+</code></pre></div><p>Each time we deal with a function/method that throws exceptions we can wrap it
 and apply in safe <code>Result</code> context:</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>iWillThrow</span> <span class=bp>()</span> <span class=o>:</span> <span class=kt>string</span> <span class=o>=</span> <span class=n>failwith</span> <span class=s>&#34;Error&#34;</span>
 
 <span class=nn>Result</span><span class=p>.</span><span class=n>protect</span> <span class=n>iWillThrow</span>  <span class=c1>// Wrap
@@ -59,13 +59,13 @@ and apply in safe <code>Result</code> context:</p><div class=highlight><pre clas
 </span><span class=c1></span><span class=o>|&gt;</span> <span class=k>function</span>                <span class=c1>// Handle Result
 </span><span class=c1></span>   <span class=o>|</span> <span class=n>Ok</span> <span class=n>v</span>    <span class=o>-&gt;</span> <span class=n>sprintf</span> <span class=s>&#34;Value was: %s&#34;</span> <span class=n>v</span>
    <span class=o>|</span> <span class=n>Error</span> <span class=n>e</span> <span class=o>-&gt;</span> <span class=n>sprintf</span> <span class=s>&#34;There was an error: %A&#34;</span> <span class=n>e</span>
-</code></pre></div><p>If we don&rsquo;t care about thrown exception, we can just use <code>Option.protect</code>, which will
+</code></pre></div><p>If we don&rsquo;t care about thrown exception we can just use <code>Option.protect</code>, which will
 return <code>None</code> for all failed cases.</p><p>There is a caveat though, that <code>protect</code> accepts only functions that take a single parameter.
 However, this constraint may actually be benefitial, because it saves us from making the same mistake
 that I did.</p><p>Partially applied <code>tryGetValue</code> function would then be:</p><div class=highlight><pre class=chroma><code class=language-fsharp data-lang=fsharp><span class=k>let</span> <span class=nv>tryGetValue</span> <span class=o>(</span><span class=n>columnName</span><span class=o>:</span> <span class=kt>string</span><span class=o>)</span> <span class=o>=</span>
    <span class=k>fun</span> <span class=o>(</span><span class=n>x</span><span class=o>:</span> <span class=n>CsvRow</span><span class=o>)</span> <span class=o>-&gt;</span> <span class=n>x</span><span class=o>.[</span><span class=n>columnName</span><span class=o>]</span>
    <span class=o>|&gt;</span> <span class=nn>Option</span><span class=p>.</span><span class=n>protect</span>
-   <span class=o>|&gt;&gt;</span> <span class=nn>Option</span><span class=p>.</span><span class=n>defaultWith</span> <span class=o>(</span><span class=k>fun</span> <span class=bp>()</span> <span class=o>-&gt;</span> <span class=n>failwithf</span> <span class=s>&#34;Missing column: %s&#34;</span> <span class=n>columnName</span><span class=o>)</span> 
+   <span class=o>|&gt;&gt;</span> <span class=nn>Option</span><span class=p>.</span><span class=n>defaultWith</span> <span class=o>(</span><span class=k>fun</span> <span class=bp>()</span> <span class=o>-&gt;</span> <span class=n>failwithf</span> <span class=s>&#34;Missing column: %s&#34;</span> <span class=n>columnName</span><span class=o>)</span>
 </code></pre></div><p>where <code>|>></code> is just an FSharpPlus operator for <code>Option.map</code> function.</p><h2 id=disclaimer>Disclaimer</h2><p>In all examples above, <code>tryGetValue</code> remains a partial function. It will fail for all <code>columnName</code> values
 that are not contained in CsvRow. It is written that way, because in my example I treat missing column name
 as an unrecoverable error. I apply <a href=https://en.wikipedia.org/wiki/Fail-fast target=_blank rel="noopener noreffer">Fail-fast</a> principle,
